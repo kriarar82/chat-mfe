@@ -21,7 +21,7 @@ A modern React-based chat microfrontend that communicates with an AI agent using
 
 1. Clone the repository:
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/kriarar82/chat-mfe.git
 cd chat-mfe
 ```
 
