@@ -128,11 +128,32 @@ This builds the app for production to the `build` folder.
 
 ## Deployment
 
-The built files can be deployed to any static hosting service:
+### Azure Container Apps (Recommended)
+
+Deploy to Azure Container Apps for a scalable, managed container solution:
+
+```bash
+# Quick deployment
+./azure-deploy.sh
+
+# Or follow the manual steps in AZURE_DEPLOYMENT.md
+```
+
+**Features:**
+- ✅ Automatic scaling
+- ✅ Managed infrastructure
+- ✅ Public URL provided
+- ✅ Health monitoring
+- ✅ Easy updates
+
+### Other Hosting Options
+
+The built files can also be deployed to:
 - Vercel
 - Netlify
 - AWS S3
 - GitHub Pages
+- Any static hosting service
 
 ## Browser Support
 
