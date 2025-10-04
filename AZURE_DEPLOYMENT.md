@@ -97,7 +97,9 @@ az containerapp create \
   --image $ACR_LOGIN_SERVER/$IMAGE_NAME:$IMAGE_TAG \
   --target-port 80 \
   --ingress external \
-  --registry-server $ACR_LOGIN_SERVER
+  --registry-server $ACR_LOGIN_SERVER \
+  --min-replicas 0 \
+  --max-replicas 1
 ```
 
 ### 7. Get Application URL
@@ -166,14 +168,29 @@ az containerapp show \
 
 ## Scaling
 
+### Current Configuration
+
+The app is configured with:
+- **Min replicas: 0** - Scales down to zero when not in use
+- **Max replicas: 1** - Single instance when accessed
+- **Cold start time**: ~10-30 seconds on first access after scaling down
+
 ### Scale Up/Down
 
 ```bash
+# Update scaling configuration
 az containerapp update \
   --name $CONTAINER_APP_NAME \
   --resource-group $RESOURCE_GROUP \
-  --min-replicas 1 \
-  --max-replicas 10
+  --min-replicas 0 \
+  --max-replicas 1
+
+# For higher traffic, you can increase max replicas
+az containerapp update \
+  --name $CONTAINER_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --min-replicas 0 \
+  --max-replicas 5
 ```
 
 ## Cleanup
@@ -209,10 +226,25 @@ az containerapp logs show \
 
 ## Cost Optimization
 
+### Zero-Scale Configuration
+
+This deployment uses a **zero-scale** configuration:
+- **Min replicas: 0** - No cost when not in use
+- **Max replicas: 1** - Single instance when accessed
+- **Automatic scaling** - Scales up on first request, down after inactivity
+
+### Cost Benefits
+
+- **$0 when idle** - No charges when no one is using the app
+- **Pay per use** - Only charged when the app is actually running
+- **Cold start trade-off** - 10-30 second delay on first access after idle period
+
+### Additional Optimizations
+
 - Use the Basic SKU for ACR (sufficient for this app)
 - Set appropriate resource limits
-- Consider using spot instances for development
 - Monitor usage in the Azure portal
+- Consider using spot instances for development
 
 ## Security Considerations
 

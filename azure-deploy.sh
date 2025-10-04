@@ -59,6 +59,8 @@ az containerapp create \
   --target-port 80 \
   --ingress external \
   --registry-server $ACR_LOGIN_SERVER \
+  --min-replicas 0 \
+  --max-replicas 1 \
   --query properties.configuration.ingress.fqdn \
   --output tsv
 
@@ -82,3 +84,8 @@ echo ""
 echo "🔧 To update the app, run:"
 echo "  az acr build --registry $ACR_NAME --image $IMAGE_NAME:$IMAGE_TAG --file Dockerfile ."
 echo "  az containerapp update --name $CONTAINER_APP_NAME --resource-group $RESOURCE_GROUP --image $ACR_LOGIN_SERVER/$IMAGE_NAME:$IMAGE_TAG"
+echo ""
+echo "💡 Cost Optimization:"
+echo "  - Min replicas: 0 (scales to zero when not used)"
+echo "  - Max replicas: 1 (single instance when accessed)"
+echo "  - Cold start: ~10-30 seconds on first access"
