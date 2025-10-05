@@ -2,7 +2,7 @@ import React from 'react';
 import Message from './Message';
 import './MessageList.css';
 
-const MessageList = ({ messages, messagesEndRef }) => {
+const MessageList = ({ messages, messagesEndRef, isWaitingForAgent }) => {
   return (
     <div className="message-list">
       <div className="messages-container">
@@ -15,6 +15,20 @@ const MessageList = ({ messages, messagesEndRef }) => {
           messages.map((message) => (
             <Message key={message.id} message={message} />
           ))
+        )}
+        {isWaitingForAgent && (
+          <div className="message agent-message">
+            <div className="message-content">
+              <div className="typing-indicator">
+                <div className="typing-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <span className="typing-text">Agent is typing...</span>
+              </div>
+            </div>
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>
