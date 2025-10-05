@@ -43,7 +43,7 @@ const MessageInput = ({ onSendMessage, disabled }) => {
             value={message}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder={disabled ? "Connecting to agent..." : "Type your message... (Press Enter to send, Shift+Enter for new line)"}
+            placeholder="Type your message... (Press Enter to send, Shift+Enter for new line)"
             className="message-textarea"
             disabled={disabled}
             rows={1}

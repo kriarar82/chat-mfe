@@ -1,43 +1,55 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
-import ConnectionStatus from './ConnectionStatus';
 import { useSSE } from '../hooks/useSSE';
+import { useWebSocket } from '../hooks/useWebSocket';
 import config from '../config/environment';
 import './ChatContainer.css';
 
 const ChatContainer = () => {
   const [messages, setMessages] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [isWaitingForAgent, setIsWaitingForAgent] = useState(false);
   const messagesEndRef = useRef(null);
+  const lastUserMessageRef = useRef('');
 
-  // SSE hook for real-time communication
-  const { 
-    connect, 
-    disconnect, 
-    sendMessage, 
-    isConnected: sseConnected,
-    lastMessage 
-  } = useSSE();
+  // Choose transport based on feature flag
+  const sse = useSSE();
+  const ws = useWebSocket();
+  const transport = config.features.useWebSocket ? ws : sse;
+  const { connect, disconnect, sendMessage, isConnected: transportConnected, lastMessage } = transport;
 
   // Update connection status
   useEffect(() => {
-    setIsConnected(sseConnected);
-  }, [sseConnected]);
+    setIsConnected(transportConnected);
+  }, [transportConnected]);
 
   // Handle incoming messages from SSE
   useEffect(() => {
     if (lastMessage) {
       try {
         const messageData = JSON.parse(lastMessage);
+        const incomingText =
+          messageData.response ||
+          (messageData.data && messageData.data.response) ||
+          messageData.content ||
+          messageData.message ||
+          lastMessage;
+        const incomingSender = messageData.sender || messageData.role || 'agent';
+
+        // Ignore echoes/user events
+        if (incomingSender === 'user' || incomingSender === 'system') return;
+        if (typeof incomingText === 'string' && incomingText.trim() === lastUserMessageRef.current.trim()) return;
+
         setMessages(prev => [...prev, {
           id: Date.now() + Math.random(),
-          text: messageData.content || messageData.message || lastMessage,
+          text: incomingText,
           sender: 'agent',
           timestamp: new Date().toISOString()
         }]);
       } catch (error) {
-        // If not JSON, treat as plain text
+        // Fallback to plain text if it's not an echo of the user's message
+        if (typeof lastMessage === 'string' && lastMessage.trim() === lastUserMessageRef.current.trim()) return;
         setMessages(prev => [...prev, {
           id: Date.now() + Math.random(),
           text: lastMessage,
@@ -45,6 +57,7 @@ const ChatContainer = () => {
           timestamp: new Date().toISOString()
         }]);
       }
+      setIsWaitingForAgent(false);
     }
   }, [lastMessage]);
 
@@ -55,7 +68,11 @@ const ChatContainer = () => {
 
   // Auto-connect to agent on component mount
   useEffect(() => {
-    connect(config.agentUrl);
+    if (config.features.useWebSocket) {
+      connect(config.websocketUrl);
+    } else {
+      connect(config.agentUrl);
+    }
   }, [connect]);
 
   const handleSendMessage = async (messageText) => {
@@ -69,29 +86,14 @@ const ChatContainer = () => {
       timestamp: new Date().toISOString()
     };
     setMessages(prev => [...prev, userMessage]);
+    lastUserMessageRef.current = messageText;
+    setIsWaitingForAgent(true);
 
-    // Send message to agent via SSE
-    if (isConnected) {
-      const userId = config.defaultUserId;
-      sendMessage(messageText, userId);
-    } else {
-      // If not connected, show error message
-      setMessages(prev => [...prev, {
-        id: Date.now() + Math.random(),
-        text: 'Not connected to agent. Please check the connection.',
-        sender: 'system',
-        timestamp: new Date().toISOString()
-      }]);
-    }
+    // Send message via active transport
+    const userId = config.defaultUserId;
+    sendMessage(messageText, userId);
   };
 
-  const handleConnect = () => {
-    connect(config.agentUrl);
-  };
-
-  const handleDisconnect = () => {
-    disconnect();
-  };
 
   const clearMessages = () => {
     setMessages([]);
@@ -101,25 +103,9 @@ const ChatContainer = () => {
     <div className="chat-container">
       <div className="chat-header">
         <h2>Chat with Agent</h2>
-        <div className="connection-controls">
-          <div className="agent-info">
-            <span className="agent-url">{config.agentUrl}</span>
-          </div>
-          {!isConnected ? (
-            <button onClick={handleConnect} className="connect-btn">
-              Connect to Agent
-            </button>
-          ) : (
-            <button onClick={handleDisconnect} className="disconnect-btn">
-              Disconnect
-            </button>
-          )}
-        </div>
       </div>
 
-      <ConnectionStatus isConnected={isConnected} />
-
-      <MessageList messages={messages} messagesEndRef={messagesEndRef} />
+      <MessageList messages={messages} messagesEndRef={messagesEndRef} isWaitingForAgent={isWaitingForAgent} />
 
       <div className="chat-controls">
         <button onClick={clearMessages} className="clear-btn">
@@ -129,7 +115,7 @@ const ChatContainer = () => {
 
       <MessageInput 
         onSendMessage={handleSendMessage}
-        disabled={!isConnected}
+        disabled={false}
       />
     </div>
   );

@@ -14,7 +14,11 @@ export const useSSE = () => {
       }
 
       // Create new EventSource connection
-      const eventSource = new EventSource(url);
+      // Append user_id so the agent can correlate streams
+      const userIdParam = encodeURIComponent(config.defaultUserId || '');
+      const separator = url.includes('?') ? '&' : '?';
+      const sseUrlWithUser = userIdParam ? `${url}${separator}user_id=${userIdParam}` : url;
+      const eventSource = new EventSource(sseUrlWithUser);
       eventSourceRef.current = eventSource;
 
       // Connection opened
@@ -66,8 +70,19 @@ export const useSSE = () => {
 
     try {
       // Send message to the agent API
-      // Extract base URL from SSE URL and use the correct endpoint
-      const baseUrl = eventSourceRef.current?.url.replace('/sse/chat', '');
+      // Derive API base from SSE URL, ignoring any query params
+      const sseUrl = eventSourceRef.current?.url || config.agentUrl;
+      let baseUrl = config.agentApiBaseUrl;
+      if (!baseUrl && sseUrl) {
+        try {
+          const parsed = new URL(sseUrl);
+          baseUrl = `${parsed.protocol}//${parsed.host}`;
+        } catch (_err) {
+          // Fallback: strip everything after /sse
+          baseUrl = sseUrl.split('/sse')[0];
+        }
+      }
+
       const response = await fetch(`${baseUrl}/chat`, {
         method: 'POST',
         headers: {

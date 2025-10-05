@@ -24,11 +24,13 @@ const getConfig = () => {
     ...baseConfig,
     agentUrl: process.env.REACT_APP_AGENT_URL || baseConfig.agentUrl,
     agentApiBaseUrl: process.env.REACT_APP_AGENT_API_BASE_URL || baseConfig.agentApiBaseUrl,
+         websocketUrl: process.env.REACT_APP_WEBSOCKET_URL || baseConfig.websocketUrl,
     appName: process.env.REACT_APP_APP_NAME || baseConfig.appName,
     debug: process.env.REACT_APP_DEBUG === 'true' ? true : process.env.REACT_APP_DEBUG === 'false' ? false : baseConfig.debug,
     defaultUserId: process.env.REACT_APP_DEFAULT_USER_ID || baseConfig.defaultUserId,
     features: {
       ...baseConfig.features,
+           useWebSocket: process.env.REACT_APP_USE_WEBSOCKET === 'true' ? true : process.env.REACT_APP_USE_WEBSOCKET === 'false' ? false : baseConfig.features.useWebSocket,
       showDebugInfo: process.env.REACT_APP_SHOW_DEBUG_INFO === 'true' ? true : process.env.REACT_APP_SHOW_DEBUG_INFO === 'false' ? false : baseConfig.features.showDebugInfo,
       enableLogging: process.env.REACT_APP_ENABLE_LOGGING === 'true' ? true : process.env.REACT_APP_ENABLE_LOGGING === 'false' ? false : baseConfig.features.enableLogging,
     },

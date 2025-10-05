@@ -14,74 +14,13 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
+  text-align: center;
 }
 
 .chat-header h2 {
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
-}
-
-.connection-controls {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-
-.agent-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.agent-url {
-  padding: 0.5rem 1rem;
-  border-radius: 25px;
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  font-size: 0.9rem;
-  font-family: monospace;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  word-break: break-all;
-  max-width: 300px;
-}
-
-.connect-btn, .disconnect-btn {
-  padding: 0.5rem 1.5rem;
-  border: none;
-  border-radius: 25px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-}
-
-.connect-btn {
-  background: #4CAF50;
-  color: white;
-}
-
-.connect-btn:hover {
-  background: #45a049;
-  transform: translateY(-2px);
-}
-
-.disconnect-btn {
-  background: #f44336;
-  color: white;
-}
-
-.disconnect-btn:hover {
-  background: #da190b;
-  transform: translateY(-2px);
 }
 
 .chat-controls {
@@ -115,18 +54,9 @@
   
   .chat-header {
     padding: 1rem;
-    flex-direction: column;
-    align-items: stretch;
   }
   
-  .connection-controls {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .agent-url {
-    max-width: 100%;
-    font-size: 0.8rem;
-    text-align: center;
+  .chat-header h2 {
+    font-size: 1.3rem;
   }
 }
