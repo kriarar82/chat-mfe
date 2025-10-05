@@ -17,7 +17,7 @@ const ChatContainer = () => {
   const sse = useSSE();
   const ws = useWebSocket();
   const transport = config.features.useWebSocket ? ws : sse;
-  const { connect, disconnect, sendMessage, reinitialize, isConnected: transportConnected, lastMessage, sessionId } = transport;
+  const { connect, disconnect, sendMessage, isConnected: transportConnected, lastMessage, sessionId } = transport;
 
   // Update connection status
   useEffect(() => {
@@ -40,18 +40,13 @@ const ChatContainer = () => {
           const error = messageData.error;
           const mcpDetails = messageData.mcp_details;
 
-          // Create a comprehensive response message with raw JSON
-          let responseText = `**Response:** ${incomingText}`;
+          // Create a clean response message with just the response text
+          let responseText = incomingText;
           
-          if (error && !success) {
-            responseText += `\n\n**Error Details:** ${error}`;
+          // Only add error details if there's an error and it's not just a general guidance message
+          if (error && !success && !error.includes('general greeting') && !error.includes('no actionable request')) {
+            responseText += `\n\n**Error:** ${error}`;
           }
-          if (mcpDetails && mcpDetails.error) {
-            responseText += `\n\n**MCP Details:** ${mcpDetails.error}`;
-          }
-
-          // Add raw JSON response for debugging
-          responseText += `\n\n**Raw JSON Response:**\n\`\`\`json\n${JSON.stringify(messageData, null, 2)}\n\`\`\``;
 
           setMessages(prev => [...prev, {
             id: Date.now() + Math.random(),
@@ -60,8 +55,7 @@ const ChatContainer = () => {
             timestamp: new Date().toISOString(),
             success: success,
             sessionId: sessionId,
-            mcpDetails: mcpDetails,
-            rawResponse: messageData
+            mcpDetails: mcpDetails
           }]);
         } else {
           // Fallback to old format handling
@@ -77,30 +71,28 @@ const ChatContainer = () => {
           if (incomingSender === 'user' || incomingSender === 'system') return;
           if (typeof incomingText === 'string' && incomingText.trim() === lastUserMessageRef.current.trim()) return;
 
-          // Add raw JSON for debugging in fallback case too
-          const responseText = `**Response:** ${incomingText}\n\n**Raw JSON Response:**\n\`\`\`json\n${JSON.stringify(messageData, null, 2)}\n\`\`\``;
+          // Use clean response text
+          const responseText = incomingText;
 
           setMessages(prev => [...prev, {
             id: Date.now() + Math.random(),
             text: responseText,
             sender: 'agent',
-            timestamp: new Date().toISOString(),
-            rawResponse: messageData
+            timestamp: new Date().toISOString()
           }]);
         }
       } catch (error) {
         // Fallback to plain text if it's not an echo of the user's message
         if (typeof lastMessage === 'string' && lastMessage.trim() === lastUserMessageRef.current.trim()) return;
         
-        // Show raw message for debugging
-        const responseText = `**Raw Message (Not JSON):**\n\`\`\`\n${lastMessage}\n\`\`\``;
+        // Use the message as-is if it's not JSON
+        const responseText = lastMessage;
         
         setMessages(prev => [...prev, {
           id: Date.now() + Math.random(),
           text: responseText,
           sender: 'agent',
-          timestamp: new Date().toISOString(),
-          rawResponse: { rawMessage: lastMessage, parseError: error.message }
+          timestamp: new Date().toISOString()
         }]);
       }
       setIsWaitingForAgent(false);
@@ -145,9 +137,6 @@ const ChatContainer = () => {
   };
 
 
-  const clearMessages = () => {
-    setMessages([]);
-  };
 
   const handleStartChat = () => {
     console.log('Starting chat session...');
@@ -168,28 +157,14 @@ const ChatContainer = () => {
     setIsWaitingForAgent(false);
   };
 
-  const handleReinitialize = () => {
-    if (reinitialize) {
-      reinitialize();
-      // Reconnect with new session
-      if (config.features.useWebSocket) {
-        connect(config.websocketUrl);
-      } else {
-        connect(config.agentUrl);
-      }
-      // Clear existing messages
-      setMessages([]);
-    }
-  };
 
   return (
     <div className="chat-container">
       <div className="chat-header">
-        <h2>Chat with Agent</h2>
+        <h2>AI Chat Assistant</h2>
         <div className="connection-status">
-          <span className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
-            {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
-          </span>
+          <div className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}></div>
+          <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
           {sessionId && (
             <div className="session-info">
               <span className="session-label">Session:</span>
@@ -199,57 +174,79 @@ const ChatContainer = () => {
         </div>
       </div>
 
-      {!isConnected ? (
-        <div className="welcome-message">
-          <div className="welcome-content">
-            <h3>Welcome to Chat MFE</h3>
-            <p>Click "Start Chat" to begin a conversation with the agent.</p>
-            <div className="welcome-features">
-              <div className="feature">
-                <span className="feature-icon">💬</span>
-                <span>Real-time chat with AI agent</span>
+      <div className="chat-main">
+        {!isConnected ? (
+          <div className="welcome-message">
+            <div className="welcome-content">
+              <div className="welcome-icon">💬</div>
+              <h3>Welcome to AI Chat Assistant</h3>
+              <p>Start a conversation with our intelligent AI agent. Get instant responses to your questions and explore our advanced features.</p>
+              <div className="welcome-features">
+                <div className="feature">
+                  <span className="feature-icon">🚀</span>
+                  <div className="feature-text">
+                    <span className="feature-title">Instant Responses</span>
+                    <span className="feature-desc">Get immediate answers</span>
+                  </div>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">🔍</span>
+                  <div className="feature-text">
+                    <span className="feature-title">Smart Search</span>
+                    <span className="feature-desc">Intelligent query processing</span>
+                  </div>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">💡</span>
+                  <div className="feature-text">
+                    <span className="feature-title">AI Powered</span>
+                    <span className="feature-desc">Advanced AI technology</span>
+                  </div>
+                </div>
+                <div className="feature">
+                  <span className="feature-icon">🔒</span>
+                  <div className="feature-text">
+                    <span className="feature-title">Secure Chat</span>
+                    <span className="feature-desc">Privacy protected</span>
+                  </div>
+                </div>
               </div>
-              <div className="feature">
-                <span className="feature-icon">🔄</span>
-                <span>Session-based conversations</span>
-              </div>
-              <div className="feature">
-                <span className="feature-icon">📊</span>
-                <span>Detailed response analysis</span>
-              </div>
+              <button onClick={handleStartChat} className="start-chat-btn">
+                <span className="btn-icon">🚀</span>
+                Start Conversation
+              </button>
             </div>
           </div>
-        </div>
-      ) : (
-        <MessageList messages={messages} messagesEndRef={messagesEndRef} isWaitingForAgent={isWaitingForAgent} />
-      )}
-
-      <div className="chat-controls">
-        {!isConnected ? (
-          <button onClick={handleStartChat} className="start-chat-btn">
-            Start Chat
-          </button>
         ) : (
           <>
-            <button onClick={handleEndChat} className="end-chat-btn">
-              End Chat
-            </button>
-            <button onClick={clearMessages} className="clear-btn">
-              Clear Messages
-            </button>
-            {!config.features.useWebSocket && (
-              <button onClick={handleReinitialize} className="reinitialize-btn">
-                New Session
+            <div className="chat-messages">
+              <MessageList messages={messages} messagesEndRef={messagesEndRef} isWaitingForAgent={isWaitingForAgent} />
+            </div>
+            <div className="chat-controls">
+              <button onClick={handleEndChat} className="end-chat-btn">
+                <span className="btn-icon">🔚</span>
+                End Chat
               </button>
-            )}
+            </div>
+            <MessageInput 
+              onSendMessage={handleSendMessage}
+              disabled={!isConnected}
+            />
           </>
         )}
       </div>
 
-      <MessageInput 
-        onSendMessage={handleSendMessage}
-        disabled={!isConnected}
-      />
+      <div className="chat-footer">
+        <div className="footer-content">
+          <p>Created by <a href="https://www.linkedin.com/in/krishna-kumar-neelakanta-ba0a9562/" target="_blank" rel="noopener noreferrer" className="footer-link">Krishna Kumar Neelakanta</a></p>
+          <div className="footer-links">
+            <a href="https://www.linkedin.com/in/krishna-kumar-neelakanta-ba0a9562/" target="_blank" rel="noopener noreferrer" className="social-link">
+              <span className="social-icon">💼</span>
+              LinkedIn
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

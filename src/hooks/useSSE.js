@@ -10,6 +10,15 @@ export const useSSE = () => {
   // Debug lastMessage changes
   useEffect(() => {
     console.log('useSSE: lastMessage state changed to:', lastMessage);
+    console.log('useSSE: lastMessage type:', typeof lastMessage);
+    if (lastMessage) {
+      try {
+        const parsed = JSON.parse(lastMessage);
+        console.log('useSSE: parsed lastMessage:', parsed);
+      } catch (e) {
+        console.log('useSSE: lastMessage is not JSON:', lastMessage);
+      }
+    }
   }, [lastMessage]);
 
   // Generate a unique session ID
@@ -58,11 +67,191 @@ export const useSSE = () => {
         }));
       };
 
-      // Message received
+      // Message received - handle different event types
       eventSource.onmessage = (event) => {
         console.log('SSE message received:', event.data);
+        console.log('Event type:', event.type);
+        console.log('Event lastEventId:', event.lastEventId);
         setLastMessage(event.data);
       };
+
+      // Handle specific event types that might be sent by the server
+      eventSource.addEventListener('message', (event) => {
+        console.log('SSE addEventListener message:', event.data);
+        setLastMessage(event.data);
+      });
+
+      // Handle 'response' event type (as seen in network tab)
+      eventSource.addEventListener('response', (event) => {
+        console.log('SSE response event received:', event.data);
+        console.log('Response event type:', event.type);
+        console.log('Response event lastEventId:', event.lastEventId);
+        
+        try {
+          const responseData = JSON.parse(event.data);
+          console.log('Parsed response data:', responseData);
+          
+          // Extract just the response text
+          const responseText = responseData.response || 'No response text available';
+          console.log('Extracted response text:', responseText);
+          
+          // Create a clean message object with just the response text
+          const cleanMessage = {
+            response: responseText,
+            success: responseData.success || false,
+            session_id: responseData.session_id || sessionId,
+            timestamp: Date.now(),
+            type: 'agent_response'
+          };
+          
+          console.log('Setting lastMessage with clean response...');
+          setLastMessage(JSON.stringify(cleanMessage));
+          console.log('lastMessage set successfully');
+        } catch (error) {
+          console.error('Error parsing response data:', error);
+          // Fallback to original data if parsing fails
+          setLastMessage(event.data);
+        }
+      });
+
+      // Handle any custom event types
+      eventSource.addEventListener('data', (event) => {
+        console.log('SSE data event received:', event.data);
+        setLastMessage(event.data);
+      });
+
+      // Handle 'chat' event type
+      eventSource.addEventListener('chat', (event) => {
+        console.log('SSE chat event received:', event.data);
+        setLastMessage(event.data);
+      });
+
+      // Generic event listener for any event type
+      eventSource.addEventListener('open', (event) => {
+        console.log('SSE connection opened');
+        console.log('EventSource readyState:', eventSource.readyState);
+        console.log('EventSource URL:', eventSource.url);
+      });
+
+      // Debug: Log all events and catch any unhandled events
+      const originalAddEventListener = eventSource.addEventListener;
+      eventSource.addEventListener = function(type, listener, options) {
+        console.log('Adding event listener for type:', type);
+        return originalAddEventListener.call(this, type, (event) => {
+          console.log(`Event fired - Type: ${type}, Data:`, event.data);
+          listener(event);
+        }, options);
+      };
+
+      // Add a catch-all listener for any event type
+      const catchAllListener = (event) => {
+        console.log('CATCH-ALL EVENT LISTENER:', event.type, event.data);
+        
+        // Only process if it's a response event and we haven't already processed it
+        if (event.type === 'response') {
+          try {
+            const responseData = JSON.parse(event.data);
+            console.log('Catch-all parsed response data:', responseData);
+            
+            // Extract just the response text
+            const responseText = responseData.response || 'No response text available';
+            console.log('Catch-all extracted response text:', responseText);
+            
+            // Create a clean message object with just the response text
+            const cleanMessage = {
+              response: responseText,
+              success: responseData.success || false,
+              session_id: responseData.session_id || sessionId,
+              timestamp: Date.now(),
+              type: 'agent_response'
+            };
+            
+            console.log('Catch-all setting lastMessage with clean response...');
+            setLastMessage(JSON.stringify(cleanMessage));
+            console.log('Catch-all lastMessage set');
+          } catch (error) {
+            console.error('Catch-all error parsing response data:', error);
+            setLastMessage(event.data);
+          }
+        } else {
+          // For non-response events, use original data
+          setLastMessage(event.data);
+        }
+      };
+
+      // Try to add listeners for common event types
+      ['message', 'response', 'data', 'chat', 'error', 'open', 'close'].forEach(eventType => {
+        try {
+          eventSource.addEventListener(eventType, catchAllListener);
+          console.log(`Added catch-all listener for: ${eventType}`);
+        } catch (e) {
+          console.log(`Could not add listener for ${eventType}:`, e.message);
+        }
+      });
+
+      // Additional debugging: Check if EventSource is receiving data
+      const checkForData = () => {
+        console.log('Checking EventSource state...');
+        console.log('ReadyState:', eventSource.readyState);
+        console.log('URL:', eventSource.url);
+        
+        if (eventSource.readyState === EventSource.OPEN) {
+          console.log('EventSource is OPEN and ready to receive data');
+        } else if (eventSource.readyState === EventSource.CONNECTING) {
+          console.log('EventSource is still CONNECTING...');
+        } else if (eventSource.readyState === EventSource.CLOSED) {
+          console.log('EventSource is CLOSED');
+        }
+      };
+
+      // Check immediately and after a delay
+      checkForData();
+      setTimeout(checkForData, 2000);
+      setTimeout(checkForData, 5000);
+
+      // Override the EventSource's internal message handling
+      const originalOnMessage = eventSource.onmessage;
+      eventSource.onmessage = function(event) {
+        console.log('OVERRIDDEN onmessage handler:', event.type, event.data);
+        
+        // Process response events to extract just the response text
+        if (event.type === 'response' || event.data.includes('"response"')) {
+          try {
+            const responseData = JSON.parse(event.data);
+            const responseText = responseData.response || 'No response text available';
+            
+            const cleanMessage = {
+              response: responseText,
+              success: responseData.success || false,
+              session_id: responseData.session_id || sessionId,
+              timestamp: Date.now(),
+              type: 'agent_response'
+            };
+            
+            console.log('Overridden handler setting clean response:', responseText);
+            setLastMessage(JSON.stringify(cleanMessage));
+          } catch (error) {
+            console.error('Overridden handler error parsing response:', error);
+            setLastMessage(event.data);
+          }
+        } else {
+          setLastMessage(event.data);
+        }
+        
+        if (originalOnMessage) {
+          originalOnMessage.call(this, event);
+        }
+      };
+
+      // Also try to intercept the EventSource's internal event handling
+      const originalDispatchEvent = eventSource.dispatchEvent;
+      if (originalDispatchEvent) {
+        eventSource.dispatchEvent = function(event) {
+          console.log('EventSource dispatchEvent intercepted:', event.type, event.data);
+          setLastMessage(event.data);
+          return originalDispatchEvent.call(this, event);
+        };
+      }
 
 
       // Error occurred
@@ -188,6 +377,7 @@ export const useSSE = () => {
     setLastMessage(null);
     console.log('SSE session reinitialized with new session ID:', newSessionId);
   }, [generateSessionId]);
+
 
 
   return {
