@@ -4,26 +4,33 @@ import config from '../config/environment';
 export const useSSE = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState(null);
+  const [sessionId, setSessionId] = useState(null);
   const eventSourceRef = useRef(null);
 
-  const connect = useCallback((url) => {
+  // Generate a unique session ID
+  const generateSessionId = useCallback(() => {
+    return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }, []);
+
+  const connect = useCallback((url, sessionIdParam = null) => {
     try {
       // Close existing connection if any
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
 
-      // Create new EventSource connection
-      // Append user_id so the agent can correlate streams
-      const userIdParam = encodeURIComponent(config.defaultUserId || '');
-      const separator = url.includes('?') ? '&' : '?';
-      const sseUrlWithUser = userIdParam ? `${url}${separator}user_id=${userIdParam}` : url;
-      const eventSource = new EventSource(sseUrlWithUser);
+      // Generate or use provided session ID
+      const currentSessionId = sessionIdParam || generateSessionId();
+      setSessionId(currentSessionId);
+
+      // Create session-based SSE URL
+      const sseUrl = `${url}/${currentSessionId}`;
+      const eventSource = new EventSource(sseUrl);
       eventSourceRef.current = eventSource;
 
       // Connection opened
       eventSource.onopen = () => {
-        console.log('SSE connection opened');
+        console.log('SSE connection opened with session:', currentSessionId);
         setIsConnected(true);
       };
 
@@ -42,7 +49,7 @@ export const useSSE = () => {
         setTimeout(() => {
           if (eventSource.readyState === EventSource.CLOSED) {
             console.log('Attempting to reconnect...');
-            connect(url);
+            connect(url, currentSessionId);
           }
         }, 3000);
       };
@@ -51,7 +58,7 @@ export const useSSE = () => {
       console.error('Failed to create SSE connection:', error);
       setIsConnected(false);
     }
-  }, []);
+  }, [generateSessionId]);
 
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {
@@ -63,27 +70,17 @@ export const useSSE = () => {
   }, []);
 
   const sendMessage = useCallback(async (message, userId = config.defaultUserId) => {
-    if (!isConnected) {
-      console.warn('Cannot send message: not connected');
+    if (!isConnected || !sessionId) {
+      console.warn('Cannot send message: not connected or no session ID');
       return;
     }
 
     try {
-      // Send message to the agent API
-      // Derive API base from SSE URL, ignoring any query params
-      const sseUrl = eventSourceRef.current?.url || config.agentUrl;
-      let baseUrl = config.agentApiBaseUrl;
-      if (!baseUrl && sseUrl) {
-        try {
-          const parsed = new URL(sseUrl);
-          baseUrl = `${parsed.protocol}//${parsed.host}`;
-        } catch (_err) {
-          // Fallback: strip everything after /sse
-          baseUrl = sseUrl.split('/sse')[0];
-        }
-      }
+      // Send message to the session-based message endpoint
+      const baseUrl = config.agentApiBaseUrl;
+      const messageUrl = `${baseUrl}/sse/chat/${sessionId}/message`;
 
-      const response = await fetch(`${baseUrl}/chat`, {
+      const response = await fetch(messageUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,17 +95,30 @@ export const useSSE = () => {
         throw new Error('Failed to send message');
       }
 
-      console.log('Message sent successfully');
+      console.log('Message sent successfully to session:', sessionId);
     } catch (error) {
       console.error('Error sending message:', error);
     }
-  }, [isConnected]);
+  }, [isConnected, sessionId]);
+
+  const reinitialize = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+    const newSessionId = generateSessionId();
+    setSessionId(newSessionId);
+    setIsConnected(false);
+    setLastMessage(null);
+    console.log('SSE session reinitialized with new session ID:', newSessionId);
+  }, [generateSessionId]);
 
   return {
     connect,
     disconnect,
     sendMessage,
+    reinitialize,
     isConnected,
     lastMessage,
+    sessionId,
   };
 };

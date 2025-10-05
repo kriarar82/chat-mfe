@@ -17,7 +17,7 @@ const ChatContainer = () => {
   const sse = useSSE();
   const ws = useWebSocket();
   const transport = config.features.useWebSocket ? ws : sse;
-  const { connect, disconnect, sendMessage, isConnected: transportConnected, lastMessage } = transport;
+  const { connect, disconnect, sendMessage, reinitialize, isConnected: transportConnected, lastMessage, sessionId } = transport;
 
   // Update connection status
   useEffect(() => {
@@ -99,10 +99,30 @@ const ChatContainer = () => {
     setMessages([]);
   };
 
+  const handleReinitialize = () => {
+    if (reinitialize) {
+      reinitialize();
+      // Reconnect with new session
+      if (config.features.useWebSocket) {
+        connect(config.websocketUrl);
+      } else {
+        connect(config.agentUrl);
+      }
+      // Clear existing messages
+      setMessages([]);
+    }
+  };
+
   return (
     <div className="chat-container">
       <div className="chat-header">
         <h2>Chat with Agent</h2>
+        {sessionId && (
+          <div className="session-info">
+            <span className="session-label">Session:</span>
+            <span className="session-id">{sessionId}</span>
+          </div>
+        )}
       </div>
 
       <MessageList messages={messages} messagesEndRef={messagesEndRef} isWaitingForAgent={isWaitingForAgent} />
@@ -111,6 +131,11 @@ const ChatContainer = () => {
         <button onClick={clearMessages} className="clear-btn">
           Clear Messages
         </button>
+        {!config.features.useWebSocket && (
+          <button onClick={handleReinitialize} className="reinitialize-btn">
+            New Session
+          </button>
+        )}
       </div>
 
       <MessageInput 

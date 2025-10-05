@@ -20,14 +20,36 @@
 .chat-header h2 {
   font-size: 1.5rem;
   font-weight: 600;
-  margin: 0;
+  margin: 0 0 0.5rem 0;
+}
+
+.session-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.session-label {
+  font-weight: 500;
+}
+
+.session-id {
+  font-family: 'Courier New', monospace;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
 }
 
 .chat-controls {
   padding: 1rem 1.5rem;
   border-top: 1px solid #eee;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .clear-btn {
@@ -44,6 +66,24 @@
 .clear-btn:hover {
   background: #f5f5f5;
   border-color: #999;
+}
+
+.reinitialize-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #667eea;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.reinitialize-btn:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
 }
 
 @media (max-width: 768px) {

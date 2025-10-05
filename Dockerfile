@@ -14,8 +14,8 @@ RUN npm ci --only=production
 COPY . .
 
 # Set build-time environment variables with defaults
-ARG REACT_APP_AGENT_URL=https://storefront-agent-api.kindflower-89fe6492.eastus.azurecontainerapps.io/sse/chat
-ARG REACT_APP_AGENT_API_BASE_URL=https://storefront-agent-api.kindflower-89fe6492.eastus.azurecontainerapps.io
+ARG REACT_APP_AGENT_URL=https://mcp-storefront-agent-app.bluesky-3a89aa0f.eastus.azurecontainerapps.io/sse/chat
+ARG REACT_APP_AGENT_API_BASE_URL=https://mcp-storefront-agent-app.bluesky-3a89aa0f.eastus.azurecontainerapps.io
 ARG REACT_APP_APP_NAME=Chat MFE
 ARG REACT_APP_DEBUG=false
 ARG REACT_APP_DEFAULT_USER_ID=prod-user

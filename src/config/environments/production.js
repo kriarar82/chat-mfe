@@ -1,13 +1,13 @@
 // Production environment configuration
 export default {
-  agentUrl: 'https://storefront-agent-api.kindflower-89fe6492.eastus.azurecontainerapps.io/sse/chat',
-  agentApiBaseUrl: 'https://storefront-agent-api.kindflower-89fe6492.eastus.azurecontainerapps.io',
-  websocketUrl: 'wss://storefront-agent-api.kindflower-89fe6492.eastus.azurecontainerapps.io/ws/chat',
+  agentUrl: 'https://mcp-storefront-agent-app.bluesky-3a89aa0f.eastus.azurecontainerapps.io/sse/chat',
+  agentApiBaseUrl: 'https://mcp-storefront-agent-app.bluesky-3a89aa0f.eastus.azurecontainerapps.io',
+  websocketUrl: 'wss://mcp-storefront-agent-app.bluesky-3a89aa0f.eastus.azurecontainerapps.io/ws/chat',
   appName: 'Chat MFE',
   debug: false,
   defaultUserId: 'prod-user',
   features: {
-    useWebSocket: true,
+    useWebSocket: false, // Using SSE instead
     showDebugInfo: false,
     enableLogging: false,
     mockMode: false,
