@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import config from '../config/environment';
 
 export const useSSE = () => {
   const [isConnected, setIsConnected] = useState(false);
@@ -57,21 +58,25 @@ export const useSSE = () => {
     }
   }, []);
 
-  const sendMessage = useCallback(async (message) => {
+  const sendMessage = useCallback(async (message, userId = config.defaultUserId) => {
     if (!isConnected) {
       console.warn('Cannot send message: not connected');
       return;
     }
 
     try {
-      // For SSE, we typically send messages via a separate HTTP endpoint
-      // This is a placeholder - you'll need to implement the actual endpoint
-      const response = await fetch('/api/send-message', {
+      // Send message to the agent API
+      // Extract base URL from SSE URL and use the correct endpoint
+      const baseUrl = eventSourceRef.current?.url.replace('/sse/chat', '');
+      const response = await fetch(`${baseUrl}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ 
+          message: message,
+          user_id: userId
+        }),
       });
 
       if (!response.ok) {

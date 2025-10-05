@@ -3,12 +3,12 @@ import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import ConnectionStatus from './ConnectionStatus';
 import { useSSE } from '../hooks/useSSE';
+import config from '../config/environment';
 import './ChatContainer.css';
 
 const ChatContainer = () => {
   const [messages, setMessages] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [agentUrl, setAgentUrl] = useState('');
   const messagesEndRef = useRef(null);
 
   // SSE hook for real-time communication
@@ -53,6 +53,11 @@ const ChatContainer = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Auto-connect to agent on component mount
+  useEffect(() => {
+    connect(config.agentUrl);
+  }, [connect]);
+
   const handleSendMessage = async (messageText) => {
     if (!messageText.trim()) return;
 
@@ -67,7 +72,8 @@ const ChatContainer = () => {
 
     // Send message to agent via SSE
     if (isConnected) {
-      sendMessage(messageText);
+      const userId = config.defaultUserId;
+      sendMessage(messageText, userId);
     } else {
       // If not connected, show error message
       setMessages(prev => [...prev, {
@@ -80,11 +86,7 @@ const ChatContainer = () => {
   };
 
   const handleConnect = () => {
-    if (agentUrl.trim()) {
-      connect(agentUrl);
-    } else {
-      alert('Please enter a valid agent URL');
-    }
+    connect(config.agentUrl);
   };
 
   const handleDisconnect = () => {
@@ -100,17 +102,12 @@ const ChatContainer = () => {
       <div className="chat-header">
         <h2>Chat with Agent</h2>
         <div className="connection-controls">
-          <input
-            type="text"
-            placeholder="Enter Agent URL (e.g., http://localhost:3001/sse)"
-            value={agentUrl}
-            onChange={(e) => setAgentUrl(e.target.value)}
-            className="url-input"
-            disabled={isConnected}
-          />
+          <div className="agent-info">
+            <span className="agent-url">{config.agentUrl}</span>
+          </div>
           {!isConnected ? (
             <button onClick={handleConnect} className="connect-btn">
-              Connect
+              Connect to Agent
             </button>
           ) : (
             <button onClick={handleDisconnect} className="disconnect-btn">

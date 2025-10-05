@@ -41,10 +41,12 @@ npm start
 
 ### Connecting to an Agent
 
-1. Enter the agent URL in the connection field (e.g., `http://localhost:3001/sse`)
-2. Click "Connect" to establish the SSE connection
-3. Start chatting! Your messages will be sent to the agent via HTTP POST requests
-4. Agent responses will be received in real-time via Server-Sent Events
+The Chat MFE automatically connects to the configured agent URL on startup. No manual connection is required.
+
+1. The application automatically connects to the agent when loaded
+2. Start chatting! Your messages will be sent to the agent via HTTP POST requests
+3. Agent responses will be received in real-time via Server-Sent Events
+4. The agent URL is configured per environment (see Configuration section)
 
 ### Message Types
 
@@ -102,6 +104,31 @@ The agent should send messages in one of these formats:
 Hello! How can I help you?
 ```
 
+## Configuration
+
+The Chat MFE uses environment-based configuration. Agent URLs and other settings are configured per environment:
+
+### Environment Files
+- **Development**: `src/config/environments/development.js`
+- **Staging**: `src/config/environments/staging.js`  
+- **Production**: `src/config/environments/production.js`
+
+### Key Configuration
+- **Agent URL**: Static URL for the agent API (no user input required)
+- **Auto-connect**: Automatically connects on startup
+- **User ID**: Configurable default user ID
+- **Debug Mode**: Environment-specific debug settings
+
+### Environment Variables
+Override configuration using environment variables:
+```bash
+REACT_APP_AGENT_URL=https://your-agent-api.com/chat
+REACT_APP_APP_NAME=My Chat MFE
+REACT_APP_DEBUG=false
+```
+
+See `CONFIGURATION.md` for detailed configuration options.
+
 ## Customization
 
 ### Styling
@@ -111,12 +138,6 @@ All components use CSS modules for styling. You can customize:
 - Gradients in `App.css` and `ChatContainer.css`
 - Animations and transitions
 - Responsive breakpoints
-
-### Configuration
-
-- Update the default agent URL in `ChatContainer.js`
-- Modify SSE reconnection timeout in `useSSE.js`
-- Adjust message sending endpoint in `useSSE.js`
 
 ## Building for Production
 

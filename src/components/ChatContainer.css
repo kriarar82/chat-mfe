@@ -29,34 +29,29 @@
 
 .connection-controls {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: space-between;
 }
 
-.url-input {
+.agent-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.agent-url {
   padding: 0.5rem 1rem;
-  border: none;
   border-radius: 25px;
   background: rgba(255, 255, 255, 0.2);
   color: white;
   font-size: 0.9rem;
-  min-width: 250px;
+  font-family: monospace;
   backdrop-filter: blur(10px);
-}
-
-.url-input::placeholder {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.url-input:focus {
-  outline: none;
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.url-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  word-break: break-all;
+  max-width: 300px;
 }
 
 .connect-btn, .disconnect-btn {
@@ -126,10 +121,12 @@
   
   .connection-controls {
     flex-direction: column;
+    gap: 0.5rem;
   }
   
-  .url-input {
-    min-width: auto;
-    width: 100%;
+  .agent-url {
+    max-width: 100%;
+    font-size: 0.8rem;
+    text-align: center;
   }
 }
