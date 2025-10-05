@@ -40,20 +40,29 @@ export const useSSE = () => {
       // Generate or use provided session ID
       const currentSessionId = sessionIdParam || generateSessionId();
       setSessionId(currentSessionId);
-      url = url + '/' + currentSessionId;
       console.log('sessionid of SSE URL:', currentSessionId);
       
       // Try base SSE URL first (without session ID)
-      let sseUrl = url;
+      let sseUrl = url+'/' + currentSessionId;
       console.log('Attempting to connect to base SSE URL:', sseUrl);
       
       const eventSource = new EventSource(sseUrl);
       eventSourceRef.current = eventSource;
+      
+      // Set a connection timeout to prevent UI flipping
+      const connectionTimeout = setTimeout(() => {
+        if (eventSource.readyState === EventSource.CONNECTING) {
+          console.log('Connection timeout - still connecting after 10 seconds');
+          // Don't set isConnected to false immediately, let the error handler deal with it
+        }
+      }, 10000);
 
       // Connection opened
       eventSource.onopen = () => {
         console.log('SSE connection opened with session:', currentSessionId);
         console.log('SSE URL:', sseUrl);
+        console.log('EventSource readyState:', eventSource.readyState);
+        clearTimeout(connectionTimeout); // Clear the timeout
         setIsConnected(true);
         
         // Send session created message to chat
@@ -258,7 +267,14 @@ export const useSSE = () => {
       eventSource.onerror = (error) => {
         console.error('SSE connection error:', error);
         console.log('EventSource readyState:', eventSource.readyState);
-        setIsConnected(false);
+        clearTimeout(connectionTimeout); // Clear the timeout
+        
+        // Don't immediately set isConnected to false - let the connection attempt complete
+        // Only set to false if the connection is actually closed
+        if (eventSource.readyState === EventSource.CLOSED) {
+          console.log('EventSource is closed, setting disconnected state');
+          setIsConnected(false);
+        }
         
         // If base URL failed, try session-based URL as fallback
         if (!sseUrl.includes('/' + currentSessionId)) {
@@ -292,16 +308,14 @@ export const useSSE = () => {
           
           sessionEventSource.onerror = (sessionError) => {
             console.error('Session URL SSE connection error:', sessionError);
-            setIsConnected(false);
+            // Only set disconnected if the connection is actually closed
+            if (sessionEventSource.readyState === EventSource.CLOSED) {
+              setIsConnected(false);
+            }
           };
         } else {
-          // Attempt to reconnect after 3 seconds
-          setTimeout(() => {
-            if (eventSource.readyState === EventSource.CLOSED) {
-              console.log('Attempting to reconnect...');
-              connect(url, currentSessionId);
-            }
-          }, 3000);
+          // Don't auto-reconnect - let user manually retry
+          console.log('Connection failed, user can retry manually');
         }
       };
 

@@ -21,8 +21,10 @@ const ChatContainer = () => {
 
   // Update connection status
   useEffect(() => {
+    console.log('ChatContainer: transportConnected changed to:', transportConnected);
+    console.log('ChatContainer: isConnected state changing from', isConnected, 'to', transportConnected);
     setIsConnected(transportConnected);
-  }, [transportConnected]);
+  }, [transportConnected, isConnected]);
 
   // Handle incoming messages from SSE
   useEffect(() => {
@@ -140,11 +142,18 @@ const ChatContainer = () => {
 
   const handleStartChat = () => {
     console.log('Starting chat session...');
+    console.log('Current isConnected state before connect:', isConnected);
+    console.log('Transport connected state before connect:', transportConnected);
+    
     if (config.features.useWebSocket) {
+      console.log('Using WebSocket, connecting to:', config.websocketUrl);
       connect(config.websocketUrl);
     } else {
+      console.log('Using SSE, connecting to:', config.agentUrl);
       connect(config.agentUrl);
     }
+    
+    console.log('Connect function called, waiting for connection...');
   };
 
   const handleEndChat = () => {
